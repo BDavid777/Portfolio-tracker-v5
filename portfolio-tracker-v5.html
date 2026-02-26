@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfólió Tracker</title>
+<style>
+:root{
+  --bg:#09090f;--surface:#111118;--surface2:#16161f;
+  --border:#1e1e2e;--border2:#2a2a3e;
+  --text:#e8e8f0;--muted:#6b6b8a;
+  --accent:#4fffb0;--accent2:#4f9fff;
+  --red:#ff4f6b;--yellow:#ffd94f;--green:#4fffb0;
+  --orange:#ff9f4f;--purple:#b44fff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Courier New',Courier,monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(79,255,176,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(79,255,176,.025) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrapper{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:20px 16px;}
+
+/* ── Header ── */
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;}
+.logo{font-family:Georgia,serif;font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.logo span{color:var(--accent);}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.last-update{font-size:11px;color:var(--muted);}
+.fx-pill{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:4px 10px;}
+.fx-pill .val{color:var(--accent2);}
+
+/* ── Buttons ── */
+.btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:'Courier New',Courier,monospace;font-size:12px;padding:8px 14px;border-radius:6px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn.primary{background:var(--accent);color:#09090f;border-color:var(--accent);font-weight:500;}
+.btn.primary:hover{opacity:.85;color:#09090f;}
+
+/* ── Config ── */
+.config-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px;display:none;animation:slideDown .3s ease;}
+.config-panel.open{display:block;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+.config-section{margin-bottom:20px;}
+.config-section h4{font-family:Georgia,serif;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.config-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:700px){.config-grid{grid-template-columns:1fr;}}
+.config-field{display:flex;flex-direction:column;gap:4px;}
+.config-field label{font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.config-field input{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Courier New',Courier,monospace;font-size:12px;padding:8px 10px;outline:none;transition:border-color .2s;}
+.config-field input:focus{border-color:var(--accent);}
+
+.sheet-guide{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:14px;}
+.sheet-guide h4{font-family:Georgia,serif;font-size:11px;font-weight:700;color:var(--yellow);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;}
+.sheet-table{width:100%;border-collapse:collapse;font-size:11px;}
+.sheet-table th{text-align:left;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--border);font-weight:400;letter-spacing:.05em;}
+.sheet-table td{padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text);}
+.sheet-table td code{background:var(--surface2);border:1px solid var(--border2);padding:1px 4px;border-radius:3px;font-size:12px;color:var(--accent2);}
+.sheet-table tr:last-child td{border-bottom:none;}
+.config-hint{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.7;}
+.config-hint code{background:var(--surface2);border:1px solid var(--border2);padding:1px 4px;border-radius:3px;font-size:12px;color:var(--accent2);}
+.config-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+
+/* ── Nav ── */
+.nav-tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);}
+.nav-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Courier New',Courier,monospace;font-size:12px;padding:10px 18px;cursor:pointer;transition:all .2s;letter-spacing:.05em;margin-bottom:-1px;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;}
+.tab-content.active{display:block;animation:fadeUp .3s ease;}
+
+/* ── Cards ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:14px;margin-bottom:24px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden;animation:fadeUp .4s ease both;}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:.5;}
+.card.red::after{background:var(--red);}
+.card.blue::after{background:var(--accent2);}
+.card.yellow::after{background:var(--yellow);}
+.card.orange::after{background:var(--orange);}
+.card.purple::after{background:var(--purple);}
+.card-label{font-size:12px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;}
+.card-value{font-family:Georgia,serif;font-size:24px;font-weight:700;letter-spacing:-1px;line-height:1;margin-bottom:6px;}
+.card-sub{font-size:11px;color:var(--muted);}
+
+/* ── Charts ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.charts-row.three{grid-template-columns:1fr 1fr 1fr;}
+@media(max-width:1100px){.charts-row.three{grid-template-columns:1fr 1fr;}}
+@media(max-width:900px){.charts-row,.charts-row.three{grid-template-columns:1fr;}}
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.chart-box h3{font-family:Georgia,serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;}
+.chart-container{position:relative;height:210px;}
+
+/* ── Tables ── */
+.table-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;overflow-x:auto;margin-bottom:24px;}
+.table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.table-header h3{font-family:Georgia,serif;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.filter-label{font-size:12px;color:var(--muted);letter-spacing:.08em;margin-right:2px;}
+.ftab{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Courier New',Courier,monospace;font-size:12px;padding:4px 10px;border-radius:20px;cursor:pointer;transition:all .2s;}
+.ftab.active,.ftab:hover{border-color:var(--accent);color:var(--accent);}
+table{width:100%;border-collapse:collapse;min-width:580px;}
+th{font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+th:first-child{text-align:left;}
+th:hover{color:var(--text);}
+th.sort-asc::after{content:' ↑';}
+th.sort-desc::after{content:' ↓';}
+td{font-size:12px;text-align:right;padding:10px;border-bottom:1px solid var(--border);white-space:nowrap;transition:background .15s;}
+td:first-child{text-align:left;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.asset-name{font-weight:500;font-size:13px;}
+.asset-sub{font-size:12px;color:var(--muted);margin-top:2px;letter-spacing:.03em;}
+
+/* ── Badges ── */
+.badge{display:inline-block;font-size:11px;padding:2px 6px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;white-space:nowrap;}
+.b-stock{background:rgba(79,159,255,.15);color:var(--accent2);border:1px solid rgba(79,159,255,.3);}
+.b-etf{background:rgba(79,255,176,.12);color:var(--accent);border:1px solid rgba(79,255,176,.3);}
+.b-bond{background:rgba(255,217,79,.12);color:var(--yellow);border:1px solid rgba(255,217,79,.3);}
+.b-fund{background:rgba(180,79,255,.15);color:var(--purple);border:1px solid rgba(180,79,255,.3);}
+.b-forex{background:rgba(255,79,107,.12);color:var(--red);border:1px solid rgba(255,79,107,.3);}
+.b-buy{background:rgba(79,255,176,.12);color:var(--accent);border:1px solid rgba(79,255,176,.3);}
+.b-sell{background:rgba(255,79,107,.12);color:var(--red);border:1px solid rgba(255,79,107,.3);}
+.b-income{background:rgba(255,217,79,.12);color:var(--yellow);border:1px solid rgba(255,217,79,.3);}
+
+.up{color:var(--green);} .dn{color:var(--red);} .neu{color:var(--muted);}
+.forex-note{font-size:11px;color:var(--muted);background:rgba(255,159,79,.08);border:1px solid rgba(255,159,79,.2);border-radius:8px;padding:8px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.avco-note{font-size:11px;color:var(--muted);background:rgba(79,159,255,.06);border:1px solid rgba(79,159,255,.15);border-radius:8px;padding:8px 14px;margin-bottom:12px;}
+
+/* ── Section divider ── */
+.section-divider{display:flex;align-items:center;gap:12px;margin:28px 0 18px;}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-divider span{font-family:Georgia,serif;font-size:12px;font-weight:700;color:var(--yellow);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;}
+
+/* ── Bond cards ── */
+.bond-cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:24px;}
+.bond-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
+.bond-card:hover{border-color:var(--yellow);}
+.bond-card-header{padding:11px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.bond-ticker{font-family:Georgia,serif;font-size:14px;font-weight:700;}
+.bond-body{padding:10px 14px;}
+.bond-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.bond-row:last-child{border-bottom:none;}
+.bond-row-label{color:var(--muted);}
+
+/* ── Coupon timeline ── */
+.coupon-timeline{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:24px;}
+.coupon-timeline h3{font-family:Georgia,serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;}
+.timeline{display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto;padding-right:4px;}
+.timeline::-webkit-scrollbar{width:3px;}
+.timeline::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.tl-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:11px;transition:background .15s;}
+.tl-item:hover{background:var(--surface2);}
+.tl-item.past{opacity:.4;}
+.tl-item.next-ev{background:rgba(255,217,79,.06);border:1px solid rgba(255,217,79,.2);}
+.tl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-future{background:var(--accent);}
+.dot-past{background:var(--border2);}
+.dot-maturity{background:var(--red);}
+.tl-date{color:var(--muted);width:88px;flex-shrink:0;}
+.tl-name{flex:1;color:var(--text);}
+.tl-ev{color:var(--muted);width:90px;text-align:right;font-size:12px;}
+.tl-amt{font-weight:500;width:110px;text-align:right;}
+
+/* ── Currency tab ── */
+.cur-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:24px;}
+.cur-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.cur-card-hdr{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.cur-name{font-family:Georgia,serif;font-size:15px;font-weight:700;}
+.cur-body{padding:10px 16px;}
+.cur-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.cur-row:last-child{border-bottom:none;}
+.cur-row-label{color:var(--muted);}
+
+.huf-box{background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:20px;margin-bottom:24px;position:relative;overflow:hidden;}
+.huf-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.huf-box h3{font-family:Georgia,serif;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px;}
+.huf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;}
+.huf-label{font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.huf-val{font-family:Georgia,serif;font-size:20px;font-weight:700;letter-spacing:-.5px;}
+.huf-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+
+.xirr-tag{display:inline-block;font-size:11px;background:rgba(79,255,176,.1);color:var(--accent);border:1px solid rgba(79,255,176,.3);border-radius:4px;padding:1px 4px;margin-left:3px;vertical-align:middle;}
+
+/* ── Loading / Empty ── */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px;gap:14px;color:var(--muted);font-size:12px;}
+.spinner{width:26px;height:26px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:12px;line-height:1.9;}
+.empty .big{font-family:Georgia,serif;font-size:28px;font-weight:800;color:var(--border2);margin-bottom:8px;}
+.notif{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:12px;z-index:200;transform:translateY(80px);opacity:0;transition:all .3s ease;max-width:320px;line-height:1.5;}
+.notif.show{transform:translateY(0);opacity:1;}
+.notif.success{border-color:var(--accent);color:var(--accent);}
+.notif.error{border-color:var(--red);color:var(--red);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">PORT<span>.</span>FOLIO</div>
+  <div class="header-right">
+    <div id="fxPill" class="fx-pill" style="display:none"></div>
+    <span class="last-update" id="lastUpdate">— nincs adat —</span>
+    <button class="btn" onclick="toggleConfig()">⚙ Beállítások</button>
+    <button class="btn primary" onclick="loadAll()">↻ Frissítés</button>
+  </div>
+</header>
+
+<!-- ══ CONFIG ══ -->
+<div class="config-panel" id="configPanel">
+  <div class="config-section">
+    <h4>Google Sheets CSV linkek — API kulcs nem kell</h4>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;background:rgba(79,255,176,.06);border:1px solid rgba(79,255,176,.2);border-radius:8px;padding:12px 14px;line-height:1.9;">
+      📋 <strong style="color:var(--text)">Beállítás lépései:</strong><br>
+      1. Google Sheets → <strong style="color:var(--accent)">Fájl → Megosztás → Közzététel a weben</strong><br>
+      2. Legördülőből válaszd ki a lapot (pl. <em>Ugyletek</em>) → formátum: <strong style="color:var(--accent)">Vesszőkkel elválasztott értékek (.csv)</strong><br>
+      3. Kattints: <strong style="color:var(--accent)">Közzététel</strong> → másold be a kapott linket az alábbi mezőbe<br>
+      4. Ismételd meg mindhárom lapra
+    </div>
+    <div class="config-grid" style="grid-template-columns:1fr;gap:10px;">
+      <div class="config-field">
+        <label>Ügyletek lap — CSV link</label>
+        <input id="txCsvUrl" placeholder="https://docs.google.com/spreadsheets/d/.../pub?gid=...&single=true&output=csv">
+      </div>
+      <div class="config-field">
+        <label>Kötvény paraméterek lap — CSV link</label>
+        <input id="bondCsvUrl" placeholder="https://docs.google.com/spreadsheets/d/.../pub?gid=...&single=true&output=csv">
+      </div>
+      <div class="config-field">
+        <label>Árfolyamok lap — CSV link (BAMOSZ + GOOGLEFINANCE)</label>
+        <input id="priceCsvUrl" placeholder="https://docs.google.com/spreadsheets/d/.../pub?gid=...&single=true&output=csv">
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;background:rgba(255,217,79,.06);border:1px solid rgba(255,217,79,.2);border-radius:8px;padding:12px 14px;line-height:1.9;">
+        💡 <strong style="color:var(--yellow)">GOOGLEFINANCE képletek az Árfolyamok lapban:</strong><br>
+        Az <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;color:var(--accent2)">Árfolyam</code> oszlopba írj képletet — a Sheets automatikusan frissíti:<br><br>
+        <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;color:var(--accent2)">OTP</code> → <code style="color:var(--accent)">=GOOGLEFINANCE("BUD:OTP")</code><br>
+        <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;color:var(--accent2)">WIZZ</code> → <code style="color:var(--accent)">=GOOGLEFINANCE("LON:WIZZ")</code><br>
+        <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;color:var(--accent2)">EPA:MEUD</code> → <code style="color:var(--accent)">=GOOGLEFINANCE("EPA:MEUD")</code><br>
+        <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;color:var(--accent2)">AAPL</code> → <code style="color:var(--accent)">=GOOGLEFINANCE("AAPL")</code><br>
+        <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;color:var(--accent2)">MOL</code> → <code style="color:var(--accent)">=GOOGLEFINANCE("BUD:MOL")</code><br>
+        <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;color:var(--accent2)">BAMOSZ alap</code> → kézzel írd be a NAV értéket<br><br>
+        ⚠️ A Ticker oszlop pontosan egyezzen az Ügyletek lapban használt tickerrel!
+      </div>
+      <div class="config-field">
+        <label>Alap deviza</label>
+        <input id="baseCurrency" value="HUF" style="max-width:120px">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.7;">
+      💡 A link így néz ki: <code style="background:var(--surface2);border:1px solid var(--border2);padding:2px 5px;border-radius:3px;color:var(--accent2);font-size:12px;">https://docs.google.com/spreadsheets/d/[ID]/pub?gid=[lapID]&single=true&output=csv</code><br>
+      ⚠️ Ha egy lap nem létezik (pl. még nincs Árfolyamok lap), hagyd üresen — az oldal kihagyja.
+    </div>
+  </div>
+
+  <div class="sheet-guide">
+    <h4>📋 Google Sheets struktúra — 3 lap elegendő</h4>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:12px;">A pozíciókat az oldal automatikusan kiszámolja az ügyletekből (AVCO módszer). Nincs szükség külön Pozíciók lapra!</p>
+
+    <p style="font-size:11px;color:var(--yellow);margin-bottom:6px;font-weight:600;">1. lap: Ügyletek</p>
+    <table class="sheet-table">
+      <tr><th>Oszlop</th><th>Példa</th><th>Megjegyzés</th></tr>
+      <tr><td><code>Dátum</code></td><td>2024.03.15</td><td>ÉÉÉÉ.HH.NN formátum</td></tr>
+      <tr><td><code>ISIN</code></td><td>HU0000403054</td><td>Befektetési alap ISIN-je is</td></tr>
+      <tr><td><code>Ticker</code></td><td>OTP / IWDA / PMAP-28</td><td>Rövid azonosító</td></tr>
+      <tr><td><code>Név</code></td><td>OTP Bank Nyrt.</td><td>Teljes név</td></tr>
+      <tr><td><code>Típus</code></td><td>Részvény / ETF / Alap / Kötvény / FOREX</td><td>Eszköz típusa</td></tr>
+      <tr><td><code>Irány</code></td><td>Vétel / Eladás / Osztalék / Kamat</td><td>Ügylet iránya</td></tr>
+      <tr><td><code>Mennyiség</code></td><td>10 (db) vagy 1000000 (Ft kötvénynél)</td><td>Részvény: darab; Kötvény: névérték Ft</td></tr>
+      <tr><td><code>Ár</code></td><td>14200 (részvény) vagy 100.5 (kötvény árfolyam)</td><td>Részvény: ft/db; Kötvény: 100-as skálán</td></tr>
+      <tr><td><code>Deviza</code></td><td>HUF / EUR / USD</td><td></td></tr>
+      <tr><td><code>Régió</code></td><td>Magyarország / USA / Európa / Globális</td><td>Szabad szöveg</td></tr>
+      <tr><td><code>Díj</code></td><td>500</td><td>Tranzakciós költség, 0 ha nincs</td></tr>
+      <tr><td><code>Megjegyzés</code></td><td>Első vétel</td><td>Opcionális</td></tr>
+    </table>
+
+    <p style="font-size:11px;color:var(--yellow);margin:12px 0 6px;font-weight:600;">2. lap: Árfolyamok (BAMOSZ + egyéb manuális)</p>
+    <table class="sheet-table">
+      <tr><th>Oszlop</th><th>Példa</th><th>Megjegyzés</th></tr>
+      <tr><td><code>Ticker</code></td><td>ALAPOM-HUF</td><td>Pontosan egyezzen az Ügyletek lappal</td></tr>
+      <tr><td><code>ISIN</code></td><td>HU0000403054</td><td>Opcionális, azonosításhoz</td></tr>
+      <tr><td><code>Név</code></td><td>OTP Supra Alapok Alapja</td><td></td></tr>
+      <tr><td><code>Árfolyam</code></td><td>2.4521</td><td>Aktuális nettó eszközérték (NAV/jegy)</td></tr>
+      <tr><td><code>Deviza</code></td><td>HUF</td><td></td></tr>
+      <tr><td><code>Dátum</code></td><td>2026.02.18</td><td>Mikor frissítetted</td></tr>
+    </table>
+    <div class="config-hint">💡 A BAMOSZ-on az alap oldalán megjelenik a NAV. Ezt másold be ide hetente/havonta. Az oldal ebből számítja a portfólió értékét.<br>
+    💡 Részvényekhez és ETF-ekhez az oldal a normál ticker alapján keresi az árfolyamot — ezeket nem kell ide beírni, kivéve ha felülírást szeretnél.</div>
+
+    <p style="font-size:11px;color:var(--yellow);margin:12px 0 6px;font-weight:600;">3. lap: Kötvény paraméterek</p>
+    <table class="sheet-table">
+      <tr><th>Oszlop</th><th>Példa</th><th>Megjegyzés</th></tr>
+      <tr><td><code>Ticker</code></td><td>PMAP-28</td><td>Egyezzen az Ügyletek lappal</td></tr>
+      <tr><td><code>Típus</code></td><td>PMÁP / FIXMÁP / MÁP+ / BMÁP / Babakötvény</td><td></td></tr>
+      <tr><td><code>Kibocsátás</code></td><td>2023.03.15</td><td></td></tr>
+      <tr><td><code>Lejárat</code></td><td>2028.03.15</td><td></td></tr>
+      <tr><td><code>KamatFizHónap</code></td><td>12</td><td>12=évente, 6=félévente</td></tr>
+      <tr><td><code>AlapKamat</code></td><td>6.5</td><td>BMÁP/MÁP+ esetén az alapkamat %</td></tr>
+      <tr><td><code>InfBázis</code></td><td>15</td><td>PMÁP inflációs alap %, a többi típusnál 0</td></tr>
+      <tr><td><code>Kamat1</code></td><td>6.5</td><td>1. évi kamat % (vagy prémium %)</td></tr>
+      <tr><td><code>Kamat2...N</code></td><td>6.5</td><td>Évenként folytatva a lejáratig</td></tr>
+    </table>
+  </div>
+
+  <div class="config-actions">
+    <button class="btn primary" onclick="saveConfig()">💾 Mentés és betöltés</button>
+    <button class="btn" onclick="loadDemo()">🎭 Demo adatok</button>
+  </div>
+</div>
+
+<!-- ══ NAV ══ -->
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab('portfolio',this)">📊 Portfólió</button>
+  <button class="nav-tab" onclick="switchTab('transactions',this)">📋 Ügyletek</button>
+  <button class="nav-tab" onclick="switchTab('currency',this)">💱 Deviza & HUF</button>
+</div>
+
+<!-- ══════════════════════════════════
+     TAB 1 — PORTFÓLIÓ
+══════════════════════════════════ -->
+<div class="tab-content active" id="tab-portfolio">
+
+  <!-- Summary cards -->
+  <div class="cards">
+    <div class="card"><div class="card-label">Portfólió érték</div><div class="card-value" id="cTotalVal">—</div><div class="card-sub" id="cTotalValSub">FOREX nélkül</div></div>
+    <div class="card" id="cPnlCard"><div class="card-label">P&L (FOREX nélkül)</div><div class="card-value" id="cPnl">—</div><div class="card-sub" id="cPnlSub">—</div></div>
+    <div class="card blue"><div class="card-label">Nyitott pozíciók</div><div class="card-value" id="cPosCnt">—</div><div class="card-sub" id="cPosCntSub">—</div></div>
+    <div class="card yellow"><div class="card-label">Legjobb hozam</div><div class="card-value" id="cBest" style="font-size:17px">—</div><div class="card-sub" id="cBestSub">—</div></div>
+    <div class="card purple"><div class="card-label">Befektetési alap</div><div class="card-value" id="cFundVal">—</div><div class="card-sub" id="cFundSub">BAMOSZ árak</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row three">
+    <div class="chart-box"><h3>Típus szerinti megoszlás</h3><div class="chart-container"><div id="donutType" style="width:100%;height:100%"></div></div></div>
+    <div class="chart-box"><h3>Régiók szerinti megoszlás</h3><div class="chart-container"><div id="donutRegion" style="width:100%;height:100%"></div></div></div>
+    <div class="chart-box"><h3>P&L % pozíciónként</h3><div class="chart-container"><div id="barPnl" style="width:100%;height:100%"></div></div></div>
+  </div>
+
+  <!-- Positions table -->
+  <div class="table-box">
+    <div class="table-header">
+      <h3>Pozíciók <span style="font-size:11px;color:var(--muted)">(AVCO módszer)</span> <span class="xirr-tag">XIRR ahol van adat</span></h3>
+      <div class="filter-row">
+        <span class="filter-label">Típus:</span>
+        <button class="ftab active" onclick="filterPos('mind',this,'type')">Mind</button>
+        <button class="ftab" onclick="filterPos('Részvény',this,'type')">Részvény</button>
+        <button class="ftab" onclick="filterPos('ETF',this,'type')">ETF</button>
+        <button class="ftab" onclick="filterPos('Alap',this,'type')">Alap</button>
+        <button class="ftab" onclick="filterPos('Kötvény',this,'type')">Kötvény</button>
+        <button class="ftab" onclick="filterPos('FOREX',this,'type')">FOREX</button>
+      </div>
+    </div>
+    <div id="posTable"><div class="empty"><div class="big">📊</div>Töltsd be az adatokat a ⚙ gombbal, vagy próbáld ki a Demo adatokat.</div></div>
+  </div>
+
+  <!-- BOND SECTION -->
+  <div class="section-divider"><span>🏛 Állampapírok részletesen</span></div>
+
+  <div class="cards" id="bondSummaryCards">
+    <div class="card yellow"><div class="card-label">Kötvény állomány</div><div class="card-value" id="bTotal">—</div><div class="card-sub" id="bTotalSub">—</div></div>
+    <div class="card" id="bPnlCard"><div class="card-label">Árfolyam P&L</div><div class="card-value" id="bPnl">—</div><div class="card-sub" id="bPnlSub">—</div></div>
+    <div class="card orange"><div class="card-label">Következő kamat</div><div class="card-value" id="bNextCoupon" style="font-size:16px">—</div><div class="card-sub" id="bNextCouponSub">—</div></div>
+    <div class="card purple"><div class="card-label">Évi kamatbevétel</div><div class="card-value" id="bAnnual">—</div><div class="card-sub">Becsült összeg</div></div>
+  </div>
+
+  <div id="bondCardsContainer"><div class="empty"><div class="big">🏛</div>Nincs kötvény pozíció.</div></div>
+
+  <div class="coupon-timeline">
+    <h3>Kamat- és tőkefizetési naptár — következő 24 hónap</h3>
+    <div class="timeline" id="couponTimeline"><div style="padding:16px;color:var(--muted);font-size:12px;text-align:center">Nincs adat.</div></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════
+     TAB 2 — ÜGYLETEK
+══════════════════════════════════ -->
+<div class="tab-content" id="tab-transactions">
+  <div class="table-box">
+    <div class="table-header">
+      <h3>Összes ügylet</h3>
+      <div class="filter-row">
+        <button class="ftab active" onclick="filterTx('mind',this)">Mind</button>
+        <button class="ftab" onclick="filterTx('Vétel',this)">Vétel</button>
+        <button class="ftab" onclick="filterTx('Eladás',this)">Eladás</button>
+        <button class="ftab" onclick="filterTx('Osztalék',this)">Osztalék</button>
+        <button class="ftab" onclick="filterTx('Kamat',this)">Kamat</button>
+      </div>
+    </div>
+    <div id="txTable"><div class="empty"><div class="big">📋</div>Nincs ügylet.</div></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-box"><h3>Irány szerinti megoszlás</h3><div class="chart-container"><div id="txTypePie" style="width:100%;height:100%"></div></div></div>
+    <div class="chart-box"><h3>Havi ügyletszám</h3><div class="chart-container"><div id="txMonthBar" style="width:100%;height:100%"></div></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     TAB 3 — DEVIZA & HUF
+══════════════════════════════════ -->
+<div class="tab-content" id="tab-currency">
+  <div class="huf-box">
+    <h3>HUF-ra konvertált összesítő (FOREX nélkül)</h3>
+    <div id="hufContent"><div class="loading"><div class="spinner"></div>Töltés...</div></div>
+  </div>
+  <div id="curGrid"><div class="empty"><div class="big">💱</div>Nincs adat.</div></div>
+</div>
+
+</div><!-- /wrapper -->
+<div class="notif" id="notif"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// CONSTANTS — ISIN country prefix → region
+// ══════════════════════════════════════════════════════════
+const ISIN_REGION={
+  US:'Észak-Amerika',CA:'Észak-Amerika',MX:'Észak-Amerika',
+  GB:'Európa',DE:'Európa',FR:'Európa',NL:'Európa',CH:'Európa',SE:'Európa',IT:'Európa',ES:'Európa',
+  HU:'Magyarország',PL:'Közép-Európa',CZ:'Közép-Európa',RO:'Közép-Európa',SK:'Közép-Európa',AT:'Közép-Európa',
+  JP:'Ázsia-Csendes-óceán',CN:'Ázsia-Csendes-óceán',KR:'Ázsia-Csendes-óceán',AU:'Ázsia-Csendes-óceán',HK:'Ázsia-Csendes-óceán',
+  IE:'Európa',LU:'Európa', // ETF domicile
+  XS:'Globális',QZ:'Globális',
+};
+const BOND_TYPES=['kötvény','kotveny','pmáp','pmap','máp+','map+','fixmáp','fixmap','bmáp','bmap','baba','fixm','állampapír'];
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let rawTx=[], positions=[], bondParams=[], manualPrices={}, fxRates={};
+let baseCurrency='HUF';
+let posTypeFilter='mind', txDirFilter='mind';
+let sortCol=null, sortAsc=true;
+
+// ══════════════════════════════════════════════════════════
+// MATH — XIRR Newton-Raphson
+// ══════════════════════════════════════════════════════════
+function xirr(cfs){
+  if(!cfs||cfs.length<2) return null;
+  if(!cfs.some(c=>c.a<0)||!cfs.some(c=>c.a>0)) return null;
+  const t0=cfs[0].d, days=cfs.map(c=>(c.d-t0)/86400000);
+  const f=r=>cfs.reduce((s,c,i)=>s+c.a/Math.pow(1+r,days[i]/365),0);
+  const df=r=>cfs.reduce((s,c,i)=>s-(days[i]/365)*c.a/Math.pow(1+r,days[i]/365+1),0);
+  let r=0.1;
+  for(let i=0;i<120;i++){
+    const fr=f(r),dfr=df(r);
+    if(Math.abs(dfr)<1e-12) break;
+    const rn=r-fr/dfr;
+    if(Math.abs(rn-r)<1e-8){r=rn;break;}
+    r=rn; if(r<-.999){r=-.999;break;}
+  }
+  return isFinite(r)?r:null;
+}
+
+function ytm(price, coupons, face){
+  let r=0.05;
+  const last=coupons[coupons.length-1]?.y||1;
+  for(let i=0;i<200;i++){
+    const pv=coupons.reduce((s,c)=>s+c.a/Math.pow(1+r,c.y),0)+face/Math.pow(1+r,last);
+    const dpv=coupons.reduce((s,c)=>s-c.y*c.a/Math.pow(1+r,c.y+1),0)-last*face/Math.pow(1+r,last+1);
+    if(Math.abs(dpv)<1e-12) break;
+    const rn=r-(pv-price)/dpv;
+    if(Math.abs(rn-r)<1e-8){r=rn;break;}
+    r=rn; if(r<-.99) break;
+  }
+  return isFinite(r)?r:null;
+}
+
+// ══════════════════════════════════════════════════════════
+// FX
+// ══════════════════════════════════════════════════════════
+async function fetchFx(base){
+  try{
+    const r=await fetch(`https://api.exchangerate-api.com/v4/latest/${base}`);
+    const d=await r.json();
+    const out={[base]:1};
+    Object.entries(d.rates).forEach(([c,v])=>{out[c]=1/v;});
+    return out;
+  }catch(e){return {[base]:1};}
+}
+const toBase=(amt,cur)=>cur===baseCurrency?amt:(fxRates[cur]||1)*amt;
+
+// ══════════════════════════════════════════════════════════
+// AVCO ENGINE — derive positions from transactions
+// ══════════════════════════════════════════════════════════
+function derivePositions(txs){
+  // Group by ticker
+  const buckets={};
+  [...txs].sort((a,b)=>a.date-b.date).forEach(t=>{
+    if(!buckets[t.ticker]) buckets[t.ticker]={ticker:t.ticker,name:t.name,type:t.type,currency:t.currency,region:t.region,isin:t.isin,qty:0,avgCost:0,totalCost:0,isBond:t.isBond,isForex:t.isForex,txs:[]};
+    const b=buckets[t.ticker];
+    b.txs.push(t);
+    if(t.dir==='Vétel'){
+      const newQty=b.qty+t.qty;
+      const newCost=b.totalCost+t.total+t.fee;
+      b.avgCost=newQty>0?newCost/newQty:0;
+      b.totalCost=newCost;
+      b.qty=newQty;
+    } else if(t.dir==='Eladás'){
+      // AVCO: avg cost stays, reduce qty
+      b.totalCost=b.avgCost*Math.max(0,b.qty-t.qty);
+      b.qty=Math.max(0,b.qty-t.qty);
+    }
+    // Osztalék/Kamat: does not affect qty or avg cost
+    // Update name/region from latest tx
+    if(t.name) b.name=t.name;
+    if(t.region) b.region=t.region;
+    if(t.isin) b.isin=t.isin;
+  });
+
+  return Object.values(buckets).filter(b=>b.qty>0.0001).map(b=>{
+    // Get current price: from manual prices first, then use last buy price as fallback
+    const manP=manualPrices[b.ticker];
+    const lastBuyP=b.txs.filter(t=>t.dir==='Vétel').slice(-1)[0]?.price||0;
+    const curPrice=manP??lastBuyP;
+
+    // For bonds: value = qty (névérték) * curPrice/100
+    const value=b.isBond?(b.qty*curPrice/100):(b.qty*curPrice);
+    const cost=b.totalCost;
+    const pnl=value-cost;
+    const pnlPct=cost>0?pnl/cost*100:0;
+
+    // XIRR cashflows
+    const cfs=[];
+    b.txs.forEach(t=>{
+      if(t.dir==='Vétel') cfs.push({d:t.date,a:-(t.total+t.fee)});
+      else if(t.dir==='Eladás') cfs.push({d:t.date,a:t.total-t.fee});
+      else if(t.dir==='Osztalék'||t.dir==='Kamat') cfs.push({d:t.date,a:t.total});
+    });
+    cfs.push({d:new Date(),a:value});
+    cfs.sort((a,b2)=>a.d-b2.d);
+    const xv=xirr(cfs);
+
+    // Region from ISIN if not set
+    let region=b.region;
+    if(!region&&b.isin&&b.isin.length>=2) region=ISIN_REGION[b.isin.slice(0,2)]||'Egyéb';
+    if(!region) region='Egyéb';
+
+    return {...b,curPrice,value,cost,pnl,pnlPct,xirrPct:xv!=null?xv*100:null,region};
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// LOAD ALL — közvetlen CSV URL, CORS-mentes
+// ══════════════════════════════════════════════════════════
+async function loadAll(){
+  baseCurrency=cfg('baseCurrency','HUF');
+  const txUrl=cfg('txCsvUrl');
+  if(!txUrl){showNotif('Add meg az Ügyletek CSV linkjét!','error');g('configPanel').classList.add('open');return;}
+  showLoading();
+
+  const bondUrl=cfg('bondCsvUrl');
+  const priceUrl=cfg('priceCsvUrl');
+
+  const [rates,txData,bondData,priceData]=await Promise.all([
+    fetchFx(baseCurrency),
+    fetchCsv(txUrl,'Ügyletek'),
+    bondUrl?fetchCsv(bondUrl,'Kötvény paraméterek'):Promise.resolve(null),
+    priceUrl?fetchCsv(priceUrl,'Árfolyamok'):Promise.resolve(null),
+  ]);
+
+  fxRates=rates; updateFxPill();
+  if(txData)    rawTx=parseTx(txData);
+  if(bondData)  bondParams=parseBondParams(bondData);
+  if(priceData) manualPrices=parsePrices(priceData);
+
+  positions=derivePositions(rawTx);
+  renderAll();
+  g('lastUpdate').textContent='Frissítve: '+new Date().toLocaleTimeString('hu-HU');
+  showNotif(`${rawTx.length} ügylet → ${positions.length} pozíció · ${bondParams.length} kötvény param · ${Object.keys(manualPrices).length} manuális ár`,'success');
+}
+
+async function fetchCsv(url, lapNev){
+  try{
+    console.log(`[CSV] Letöltés: ${lapNev} → ${url.slice(0,80)}...`);
+    const r=await fetch(url);
+    console.log(`[CSV] HTTP státusz: ${r.status} ${r.statusText}`);
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const text=await r.text();
+    console.log(`[CSV] Kapott szöveg első 200 kar:`, text.slice(0,200));
+    if(text.trim().startsWith('<')) throw new Error('HTML választ kaptunk — a lap nincs közzétéve CSV-ként');
+    const rows=parseCsvText(text);
+    console.log(`[CSV] Sorok száma: ${rows.length}, első sor:`, rows[0]);
+    return rows;
+  }catch(e){
+    console.error(`[CSV HIBA] "${lapNev}":`, e);
+    showNotif(`"${lapNev}" hiba: ${e.message}`,'error');
+    return null;
+  }
+}
+
+// Robust CSV parser — kezeli az idézőjeles mezőket, vesszőket, ékezeteket
+function parseCsvText(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  return lines.map(line=>{
+    const cells=[];
+    let cur='', inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){
+        if(inQ&&line[i+1]==='"'){cur+='"';i++;} // escaped quote
+        else inQ=!inQ;
+      } else if(ch===','&&!inQ){
+        cells.push(cur.trim());cur='';
+      } else cur+=ch;
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// PARSERS
+// ══════════════════════════════════════════════════════════
+function parseTx(rows){
+  if(!rows||rows.length<2){console.warn('[parseTx] Kevés sor:', rows?.length);return [];}
+  console.log('[parseTx] Fejléc:', rows[0]);
+  console.log('[parseTx] Első adatsor:', rows[1]);
+  const h=rows[0].map(x=>x.trim().toLowerCase());
+  const get=(row,...ns)=>{for(const n of ns){const i=h.findIndex(x=>x.includes(n));if(i>=0&&row[i]!=null)return String(row[i]).trim();}return '';};
+  const pn=s=>parseFloat(String(s||'').replace(/\s/g,'').replace(',','.'))||0;
+  const pd=s=>{
+    // Eltávolítjuk a záró pontot: "2024.12.25." → "2024.12.25"
+    const clean=String(s).trim().replace(/\.$/,'').replace(/\./g,'-');
+    const d=new Date(clean);
+    return isNaN(d)?null:d;
+  };
+  // Irány normalizálás: "vétel"→"Vétel", "eladás"→"Eladás" stb.
+  const normDir=s=>{
+    const m={'vétel':'Vétel','vetel':'Vétel','buy':'Vétel',
+             'eladás':'Eladás','eladas':'Eladás','sell':'Eladás',
+             'osztalék':'Osztalék','osztalek':'Osztalék','dividend':'Osztalék',
+             'kamat':'Kamat','interest':'Kamat'};
+    return m[String(s).trim().toLowerCase()]||s;
+  };
+
+  const result=rows.slice(1).filter(r=>r.length>2&&r[0]).map(row=>{
+    const type=get(row,'típ','tip','type')||'Részvény';
+    const isBond=BOND_TYPES.some(k=>type.toLowerCase().includes(k));
+    const isForex=type.toLowerCase()==='forex';
+    const dir=normDir(get(row,'irány','irany','dir','side'));
+    const qty=pn(get(row,'menny','qty','quan','névért'));
+    const price=pn(get(row,'ár','price','ara'));
+    const fee=pn(get(row,'díj','dij','fee'));
+    const currency=(get(row,'devi','curr')||baseCurrency).toUpperCase();
+    const total=isBond?(qty*price/100):(qty*price);
+    const isin=get(row,'isin');
+    let region=get(row,'régió','regio','region','ország','orszag');
+    if(!region&&isin.length>=2) region=ISIN_REGION[isin.slice(0,2)]||'';
+    return {
+      date:pd(get(row,'dat','dát','date')),
+      dateStr:get(row,'dat','dát','date'),
+      isin,
+      ticker:get(row,'tick')||get(row,'isin'),
+      name:get(row,'eszk','nev','név','name'),
+      type,dir,qty,price,fee,currency,region,
+      note:get(row,'megj','note'),
+      total,isBond,isForex,
+    };
+  }).filter(t=>{
+    const ok=t.date&&t.ticker&&t.dir;
+    if(!ok) console.warn('[parseTx] Kiszűrt sor — hiányzó dátum/ticker/irány:', t);
+    return ok;
+  });
+  console.log(`[parseTx] Feldolgozott ügyletek: ${result.length}`);
+  if(result.length>0) console.log('[parseTx] Első ügylet:', result[0]);
+  return result;
+}
+
+function parseBondParams(rows){
+  if(!rows||rows.length<2) return [];
+  const h=rows[0].map(x=>x.trim().toLowerCase());
+  const get=(row,...ns)=>{for(const n of ns){const i=h.findIndex(x=>x.includes(n));if(i>=0&&row[i])return String(row[i]).trim();}return '';};
+  const pn=s=>parseFloat(String(s||'').replace(',','.'))||0;
+  return rows.slice(1).filter(r=>r[0]).map(row=>{
+    const rates=[];
+    for(let i=1;i<=20;i++){
+      const idx=h.findIndex(x=>x===`kamat${i}`||x===`k${i}`);
+      if(idx<0) break;
+      if(row[idx]) rates.push(pn(row[idx]));
+    }
+    return {
+      ticker:get(row,'tick'),type:get(row,'típ','tip','type'),
+      issue:get(row,'kibocsát','issue','kezd'),
+      maturity:get(row,'lejár','maturity','vég'),
+      couponMonth:pn(get(row,'kamatfiz','coupon','hónap'))||12,
+      baseRate:pn(get(row,'alap','base','bubor')),
+      inflBase:pn(get(row,'infla','infl','cpi')),
+      rates,
+    };
+  }).filter(b=>b.ticker&&b.maturity);
+}
+
+function parsePrices(rows){
+  if(!rows||rows.length<2) return {};
+  const h=rows[0].map(x=>x.trim().toLowerCase());
+  const get=(row,...ns)=>{for(const n of ns){const i=h.findIndex(x=>x.includes(n));if(i>=0&&row[i])return String(row[i]).trim();}return '';};
+  const pn=s=>parseFloat(String(s||'').replace(/\s/g,'').replace(',','.'))||0;
+  const out={};
+  rows.slice(1).filter(r=>r[0]).forEach(row=>{
+    const ticker=get(row,'tick');
+    const price=pn(get(row,'árfolyam','ár','price','nav','nev'));
+    if(ticker&&price>0) out[ticker]=price;
+  });
+  return out;
+}
+
+// ══════════════════════════════════════════════════════════
+// BOND ANALYTICS
+// ══════════════════════════════════════════════════════════
+function getBondRate(bp,year){
+  const t=bp.type.toLowerCase();
+  if(t.includes('máp+')||t.includes('map+')){
+    const def=[0.5,0.75,1.0,1.25,1.5,1.75,2.0];
+    return (bp.baseRate||4.25)+(bp.rates[Math.min(year,7)-1]??def[Math.min(year,7)-1]);
+  }
+  if(t.includes('pmáp')||t.includes('pmap')){
+    return (bp.inflBase||0)+(bp.rates[Math.min(year,bp.rates.length)-1]??1.5);
+  }
+  if(t.includes('bmáp')||t.includes('bmap')){
+    return (bp.baseRate||6.5)+(bp.rates[0]??1.0);
+  }
+  return bp.rates[Math.min(year,bp.rates.length)-1]??bp.rates[0]??5.0;
+}
+
+function buildSchedule(pos,bp){
+  if(!bp) return [];
+  const issue=new Date(bp.issue.replace(/\./g,'-'));
+  const mat=new Date(bp.maturity.replace(/\./g,'-'));
+  if(isNaN(issue)||isNaN(mat)) return [];
+  const face=pos.qty; // névérték Ft
+  const cm=bp.couponMonth||12;
+  const now=new Date();
+  const evs=[];
+  let yr=1;
+  for(;;){
+    const pd=new Date(issue);
+    pd.setMonth(pd.getMonth()+cm*yr);
+    if(pd>mat) break;
+    const rate=getBondRate(bp,yr);
+    evs.push({date:pd,ticker:pos.ticker,name:pos.name,type:'Kamat',amount:(rate/100)*(cm/12)*face,rate,past:pd<now});
+    yr++;
+  }
+  evs.push({date:new Date(mat),ticker:pos.ticker,name:pos.name,type:'Tőketörlesztés',amount:face,rate:0,past:mat<now});
+  return evs.sort((a,b)=>a.date-b.date);
+}
+
+function bondAnalytics(pos,bp){
+  if(!bp) return null;
+  const now=new Date();
+  const mat=new Date(bp.maturity.replace(/\./g,'-'));
+  const schedule=buildSchedule(pos,bp);
+  const future=schedule.filter(e=>!e.past);
+  const next=future.find(e=>e.type==='Kamat')||null;
+  const annualIncome=schedule.filter(e=>e.type==='Kamat').reduce((s,e)=>s+e.amount,0)/Math.max(1,Math.ceil((mat-new Date(bp.issue.replace(/\./g,'-')))/365/86400000));
+
+  // YTM
+  const purchaseCost=pos.cost; // already correct from AVCO
+  const futureCoupons=schedule.filter(e=>!e.past&&e.type==='Kamat').map(e=>({y:Math.max(0.01,(e.date-now)/365/86400000),a:e.amount}));
+  const ytmVal=futureCoupons.length>0?ytm(purchaseCost,futureCoupons,pos.qty):null;
+
+  return {mat,schedule,next,annualIncome,ytmPct:ytmVal!=null?ytmVal*100:null,daysToMat:Math.round((mat-now)/86400000)};
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════════════
+function renderAll(){
+  renderPortfolioCards();
+  renderPortfolioCharts();
+  renderPosTable(posTypeFilter);
+  renderBondSection();
+  renderTxTable(txDirFilter);
+  renderTxCharts();
+  renderCurrencyTab();
+}
+
+// ── Portfolio cards ──
+function renderPortfolioCards(){
+  const nf=positions.filter(p=>!p.isForex&&!p.isBond);
+  const funds=positions.filter(p=>p.type==='Alap'||p.type==='Befektetési alap');
+  const tv=nf.reduce((s,p)=>s+p.value,0);
+  const tc=nf.reduce((s,p)=>s+p.cost,0);
+  const tp=tv-tc, pp=tc>0?tp/tc*100:0;
+  const best=[...nf].sort((a,b)=>b.pnlPct-a.pnlPct)[0];
+  const fv=funds.reduce((s,p)=>s+p.value,0);
+
+  const fmt=v=>{const a=Math.abs(v);if(a>=1e9)return(v/1e9).toFixed(2)+' Mrd';if(a>=1e6)return(v/1e6).toFixed(2)+' M';if(a>=1e3)return(v/1e3).toFixed(1)+' E';return v.toFixed(0);};
+  set('cTotalVal',fmt(tv));
+  set('cTotalValSub',`${nf.length} pozíció · részvény+ETF+alap`);
+  set('cPnl',(tp>=0?'+':'')+fmt(tp));
+  g('cPnl').style.color=tp>=0?'var(--green)':'var(--red)';
+  g('cPnlCard').className='card '+(tp>=0?'':'red');
+  set('cPnlSub',`<span class="${tp>=0?'up':'dn'}">${tp>=0?'+':''}${pp.toFixed(2)}%</span> egyszerű hozam`);
+  set('cPosCnt',positions.length);
+  set('cPosCntSub',[...new Set(positions.map(p=>p.type))].join(' · '));
+  set('cFundVal',fmt(fv));
+  set('cFundSub',`${funds.length} alap pozíció · BAMOSZ árak`);
+  if(best){
+    set('cBest',best.ticker);
+    const xs=best.xirrPct!=null?` <span class="xirr-tag">XIRR ${best.xirrPct>=0?'+':''}${best.xirrPct.toFixed(1)}%</span>`:'';
+    set('cBestSub',`<span class="up">+${best.pnlPct.toFixed(1)}%</span>${xs}`);
+  }
+}
+
+// ── Portfolio charts ──
+function renderPortfolioCharts(){
+  const pal=['#4fffb0','#4f9fff','#ffd94f','#ff4f6b','#b44fff','#ff9f4f','#4fffef','#ff4fff'];
+  const nf=positions.filter(p=>!p.isForex);
+  const tm={};nf.forEach(p=>{tm[p.type]=(tm[p.type]||0)+p.value;});
+  const rm={};nf.forEach(p=>{rm[p.region||'Egyéb']=(rm[p.region||'Egyéb']||0)+p.value;});
+  g('donutType').innerHTML=svgDonut(tm,pal);
+  g('donutRegion').innerHTML=svgDonut(rm,pal);
+  const sorted=[...positions].filter(p=>!p.isBond).sort((a,b)=>b.pnlPct-a.pnlPct).slice(0,10);
+  g('barPnl').innerHTML=svgBar(sorted.map(p=>p.ticker||p.name.slice(0,7)),sorted.map(p=>+p.pnlPct.toFixed(2)));
+}
+
+function mk(){}// no-op, replaced
+
+function renderTxCharts(){
+  if(!rawTx.length) return;
+  const dm={};rawTx.forEach(t=>{dm[t.dir]=(dm[t.dir]||0)+1;});
+  g('txTypePie').innerHTML=svgDonut(dm,['#4fffb0','#ff4f6b','#ffd94f','#4f9fff','#b44fff']);
+  const bm={};rawTx.forEach(t=>{const k=t.date.toISOString().slice(0,7);bm[k]=(bm[k]||0)+1;});
+  const months=Object.keys(bm).sort();
+  g('txMonthBar').innerHTML=svgBarSimple(months,months.map(m=>bm[m]),'#4f9fff');
+}
+
+// ── SVG Donut chart ──
+function svgDonut(dataObj,pal){
+  const labels=Object.keys(dataObj), vals=Object.values(dataObj);
+  const total=vals.reduce((a,b)=>a+b,0);
+  if(!total) return '<div style="color:var(--muted);font-size:11px;padding:20px;text-align:center">Nincs adat</div>';
+  const cx=110,cy=105,r=75,ri=48;
+  let angle=-Math.PI/2, paths='', legend='';
+  vals.forEach((v,i)=>{
+    const slice=v/total*Math.PI*2;
+    const x1=cx+r*Math.cos(angle), y1=cy+r*Math.sin(angle);
+    const x2=cx+r*Math.cos(angle+slice), y2=cy+r*Math.sin(angle+slice);
+    const xi1=cx+ri*Math.cos(angle), yi1=cy+ri*Math.sin(angle);
+    const xi2=cx+ri*Math.cos(angle+slice), yi2=cy+ri*Math.sin(angle+slice);
+    const lg=slice>Math.PI?1:0;
+    const pct=(v/total*100).toFixed(1);
+    paths+=`<path d="M${xi1},${yi1} L${x1},${y1} A${r},${r} 0 ${lg} 1 ${x2},${y2} L${xi2},${yi2} A${ri},${ri} 0 ${lg} 0 ${xi1},${yi1}" fill="${pal[i%pal.length]}" opacity="0.85">
+      <title>${labels[i]}: ${pct}%</title></path>`;
+    legend+=`<div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#6b6b8a;margin-bottom:3px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${pal[i%pal.length]};flex-shrink:0"></div>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${labels[i]} <span style="color:#e8e8f0">${pct}%</span></span></div>`;
+    angle+=slice;
+  });
+  return `<div style="display:flex;align-items:center;gap:12px;height:100%">
+    <svg width="220" height="210" style="flex-shrink:0">${paths}</svg>
+    <div style="flex:1;overflow:hidden">${legend}</div>
+  </div>`;
+}
+
+// ── SVG Horizontal bar chart ──
+function svgBar(labels,vals){
+  if(!vals.length) return '';
+  const max=Math.max(...vals.map(Math.abs),1);
+  const W=340,bh=18,gap=6,pad=70,rpad=50;
+  const H=labels.length*(bh+gap)+20;
+  let bars='',texts='';
+  labels.forEach((lbl,i)=>{
+    const v=vals[i], y=10+i*(bh+gap);
+    const barW=Math.abs(v)/max*(W-pad-rpad);
+    const x=v>=0?pad:pad-barW;
+    const col=v>=0?'#4fffb0':'#ff4f6b';
+    bars+=`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${col}" opacity="0.75" rx="3">
+      <title>${lbl}: ${v>=0?'+':''}${v}%</title></rect>`;
+    texts+=`<text x="${pad-4}" y="${y+bh/2+4}" text-anchor="end" font-size="10" fill="#6b6b8a">${lbl}</text>`;
+    texts+=`<text x="${x+(v>=0?barW+3:-3)}" y="${y+bh/2+4}" text-anchor="${v>=0?'start':'end'}" font-size="10" fill="${col}">${v>=0?'+':''}${v}%</text>`;
+  });
+  // zero line
+  bars+=`<line x1="${pad}" y1="5" x2="${pad}" y2="${H-5}" stroke="#2a2a3e" stroke-width="1"/>`;
+  return `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${bars}${texts}</svg>`;
+}
+
+// ── SVG simple bar chart (for monthly tx) ──
+function svgBarSimple(labels,vals,color){
+  if(!vals.length) return '';
+  const max=Math.max(...vals,1);
+  const W=400,H=160,padB=30,padT=10,barGap=2;
+  const bw=Math.max(4,(W-barGap*labels.length)/labels.length);
+  let bars='',texts='';
+  vals.forEach((v,i)=>{
+    const bh=(v/max)*(H-padB-padT);
+    const x=i*(bw+barGap);
+    const y=H-padB-bh;
+    bars+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${color}" opacity="0.7" rx="2"><title>${labels[i]}: ${v}</title></rect>`;
+    if(i%Math.ceil(labels.length/6)===0){
+      texts+=`<text x="${x+bw/2}" y="${H-6}" text-anchor="middle" font-size="8" fill="#6b6b8a">${labels[i].slice(2)}</text>`;
+    }
+  });
+  return `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${bars}${texts}</svg>`;
+}
+function renderPosTable(filter){
+  posTypeFilter=filter;
+  const nonBond=positions.filter(p=>!p.isBond);
+  let data=filter==='mind'?nonBond:nonBond.filter(p=>p.type===filter);
+
+  const tc2={'Részvény':'b-stock','ETF':'b-etf','Alap':'b-fund','Befektetési alap':'b-fund','FOREX':'b-forex'};
+
+  if(!data.length){g('posTable').innerHTML='<div class="empty"><div class="big">🔍</div>Nincs ilyen pozíció.</div>';return;}
+
+  const rows=data.map(p=>{
+    const xc=p.xirrPct!=null?`<span class="${p.xirrPct>=0?'up':'dn'}">${p.xirrPct>=0?'+':''}${p.xirrPct.toFixed(2)}%</span>`:'<span class="neu">—</span>';
+    const isManual=manualPrices[p.ticker]!=null;
+    const priceNote=isManual?'<span style="font-size:11px;color:var(--purple)"> ▲BAMOSZ</span>':'';
+    const forexNote=p.isForex?' <span style="font-size:11px;color:var(--orange)">(nem összesítve)</span>':'';
+    const avgPriceDisp=p.isBond?p.avgCost.toFixed(4):p.avgCost.toLocaleString('hu-HU',{maximumFractionDigits:4});
+    const curPriceDisp=p.isBond?p.curPrice.toFixed(4)+' (árf.)':p.curPrice.toLocaleString('hu-HU',{maximumFractionDigits:4});
+    const qtyDisp=p.isBond?p.qty.toLocaleString('hu-HU',{maximumFractionDigits:0})+' Ft':p.qty.toLocaleString('hu-HU',{maximumFractionDigits:6});
+    return `<tr>
+      <td><div class="asset-name">${p.name||p.ticker}${forexNote}</div>
+          <div class="asset-sub">${p.ticker} · ${p.isin||'—'} · ${p.region||'—'}</div></td>
+      <td><span class="badge ${tc2[p.type]||'b-stock'}">${p.type}</span></td>
+      <td>${qtyDisp}</td>
+      <td>${avgPriceDisp}</td>
+      <td>${curPriceDisp}${priceNote} <span style="font-size:11px;color:var(--muted)">${p.currency}</span></td>
+      <td class="${p.pnl>=0?'up':'dn'}">${p.pnl>=0?'+':''}${p.pnl.toLocaleString('hu-HU',{maximumFractionDigits:0})}</td>
+      <td class="${p.pnlPct>=0?'up':'dn'}">${p.pnlPct>=0?'+':''}${p.pnlPct.toFixed(2)}%</td>
+      <td>${xc}</td>
+      <td>${p.value.toLocaleString('hu-HU',{maximumFractionDigits:0})} <span style="font-size:11px;color:var(--muted)">${p.currency}</span></td>
+    </tr>`;
+  }).join('');
+
+  g('posTable').innerHTML=`
+    <div class="avco-note">ℹ️ Pozíciók az ügyletekből számítva (AVCO · súlyozott átlagár). Az <span style="color:var(--purple)">▲BAMOSZ</span> jelölés manuális árfolyamot jelöl (Árfolyamok lap).</div>
+    <div class="forex-note">⚠️ FOREX pozíciók megjelennek, de az összesített értékbe és P&L-be <strong>nem számítanak bele</strong>.</div>
+    <table>
+      <thead><tr>
+        <th onclick="sortTable('name')">Eszköz</th>
+        <th onclick="sortTable('type')">Típus</th>
+        <th onclick="sortTable('qty')">Mennyiség</th>
+        <th onclick="sortTable('avgCost')">AVCO ár</th>
+        <th onclick="sortTable('curPrice')">Jelenlegi ár</th>
+        <th onclick="sortTable('pnl')">P&L</th>
+        <th onclick="sortTable('pnlPct')">P&L %</th>
+        <th onclick="sortTable('xirrPct')">XIRR/év</th>
+        <th onclick="sortTable('value')">Érték</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function filterPos(f,el,group){
+  const container=el.closest('.filter-row');
+  container.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderPosTable(f);
+}
+
+function sortTable(col){
+  if(sortCol===col) sortAsc=!sortAsc; else{sortCol=col;sortAsc=true;}
+  positions.sort((a,b)=>{
+    const av=a[col]??'',bv=b[col]??'';
+    return sortAsc?(av>bv?1:av<bv?-1:0):(av<bv?1:av>bv?-1:0);
+  });
+  renderPosTable(posTypeFilter);
+}
+
+// ── Bond section ──
+function renderBondSection(){
+  const bonds=positions.filter(p=>p.isBond);
+  const now=new Date();
+  const fmt=v=>{const a=Math.abs(v);if(a>=1e9)return(v/1e9).toFixed(2)+' Mrd';if(a>=1e6)return(v/1e6).toFixed(2)+' M';if(a>=1e3)return(v/1e3).toFixed(1)+' E';return v.toFixed(0);};
+
+  const bTv=bonds.reduce((s,p)=>s+p.value,0);
+  const bTc=bonds.reduce((s,p)=>s+p.cost,0);
+  const bPnl=bTv-bTc, bPnlPct=bTc>0?bPnl/bTc*100:0;
+
+  set('bTotal',fmt(bTv)); set('bTotalSub',`${bonds.length} kötvény · névértéken`);
+  set('bPnl',(bPnl>=0?'+':'')+fmt(bPnl));
+  g('bPnl').style.color=bPnl>=0?'var(--green)':'var(--red)';
+  g('bPnlCard').className='card '+(bPnl>=0?'':'red');
+  set('bPnlSub',`<span class="${bPnlPct>=0?'up':'dn'}">${bPnlPct>=0?'+':''}${bPnlPct.toFixed(2)}%</span>`);
+
+  const allEvs=[],allSchedules=[];
+  let totalAnnual=0;
+  bonds.forEach(pos=>{
+    const bp=bondParams.find(b=>b.ticker.toLowerCase()===pos.ticker.toLowerCase());
+    const an=bp?bondAnalytics(pos,bp):null;
+    if(an){allEvs.push(...an.schedule);totalAnnual+=an.annualIncome;allSchedules.push({pos,bp,an});}
+  });
+
+  const nextEv=allEvs.filter(e=>!e.past&&e.type==='Kamat').sort((a,b)=>a.date-b.date)[0];
+  if(nextEv){
+    set('bNextCoupon',nextEv.ticker);
+    const d=Math.round((nextEv.date-now)/86400000);
+    set('bNextCouponSub',`${nextEv.date.toLocaleDateString('hu-HU')} · <span class="${d<30?'dn':d<90?'neu':'up'}">${d} nap</span> · +${fmt(nextEv.amount)} Ft`);
+  } else {set('bNextCoupon','—');set('bNextCouponSub','Nincs közelgő');}
+  set('bAnnual',fmt(totalAnnual)+' Ft');
+
+  // Bond cards
+  if(!bonds.length){g('bondCardsContainer').innerHTML='<div class="empty"><div class="big">🏛</div>Nincs kötvény pozíció.</div>';return;}
+  const typeClass=t=>{t=t.toLowerCase();if(t.includes('fixmáp')||t.includes('fix'))return 'b-etf';if(t.includes('pmáp')||t.includes('pmap'))return 'b-income';if(t.includes('máp+')||t.includes('map+'))return 'b-stock';if(t.includes('baba'))return 'b-fund';return 'b-bond';};
+  const cards=bonds.map(pos=>{
+    const bp=bondParams.find(b=>b.ticker.toLowerCase()===pos.ticker.toLowerCase());
+    const an=bp?bondAnalytics(pos,bp):null;
+    const mat=an?.mat;
+    const days=an?.daysToMat;
+    const dStr=days==null?'—':days<0?`<span class="dn">Lejárt</span>`:days<365?`<span style="color:var(--orange)">${days} nap</span>`:`${days} nap`;
+    return `<div class="bond-card">
+      <div class="bond-card-header">
+        <span class="bond-ticker">${pos.ticker} <span class="badge ${typeClass(bp?.type||pos.type)}">${bp?.type||pos.type}</span></span>
+        <span style="font-size:12px;color:var(--muted)">${dStr}</span>
+      </div>
+      <div class="bond-body">
+        <div class="bond-row"><span class="bond-row-label">Névérték (db×10000)</span><span>${pos.qty.toLocaleString('hu-HU')} Ft</span></div>
+        <div class="bond-row"><span class="bond-row-label">AVCO bekerülési ár</span><span>${pos.cost.toLocaleString('hu-HU',{maximumFractionDigits:0})} Ft</span></div>
+        <div class="bond-row"><span class="bond-row-label">Jelenlegi árfolyam</span><span>${pos.curPrice.toFixed(4)}</span></div>
+        <div class="bond-row"><span class="bond-row-label">Lejárat</span><span>${mat?mat.toLocaleDateString('hu-HU'):'—'}</span></div>
+        <div class="bond-row"><span class="bond-row-label">1. évi kamatráta</span><span>${bp?getBondRate(bp,1).toFixed(2)+'%':'—'}</span></div>
+        <div class="bond-row"><span class="bond-row-label">Évi kamatbevétel</span><span class="up">${an?fmt(an.annualIncome)+' Ft':'—'}</span></div>
+        <div class="bond-row"><span class="bond-row-label">YTM <span class="xirr-tag">YTM</span></span><span class="${an?.ytmPct!=null?(an.ytmPct>=0?'up':'dn'):'neu'}">${an?.ytmPct!=null?(an.ytmPct>=0?'+':'')+an.ytmPct.toFixed(2)+'%':'—'}</span></div>
+        <div class="bond-row"><span class="bond-row-label">Árfolyam P&L</span><span class="${pos.pnl>=0?'up':'dn'}">${pos.pnl>=0?'+':''}${fmt(pos.pnl)} Ft</span></div>
+      </div>
+    </div>`;
+  }).join('');
+  g('bondCardsContainer').innerHTML=`<div class="bond-cards-grid">${cards}</div>`;
+
+  // Timeline
+  const cutoff=new Date();cutoff.setMonth(cutoff.getMonth()+24);
+  const upcoming=allEvs.filter(e=>e.date<=cutoff).sort((a,b)=>a.date-b.date);
+  const nextDate=upcoming.find(e=>!e.past)?.date;
+  if(!upcoming.length){g('couponTimeline').innerHTML='<div style="padding:14px;color:var(--muted);font-size:12px;text-align:center">Nincs esemény a következő 24 hónapban.</div>';return;}
+  g('couponTimeline').innerHTML=upcoming.map(e=>{
+    const isNext=nextDate&&e.date.toDateString()===nextDate.toDateString()&&!e.past;
+    const dotC=e.past?'dot-past':e.type==='Tőketörlesztés'?'dot-maturity':'dot-future';
+    const amtC=e.type==='Tőketörlesztés'?'dn':e.past?'neu':'up';
+    return `<div class="tl-item ${e.past?'past':''} ${isNext?'next-ev':''}">
+      <div class="tl-dot ${dotC}"></div>
+      <div class="tl-date">${e.date.toLocaleDateString('hu-HU')}</div>
+      <div class="tl-name">${e.name} <span style="font-size:11px;color:var(--muted)">${e.ticker}</span></div>
+      <div class="tl-ev" style="color:${e.type==='Tőketörlesztés'?'var(--red)':'var(--muted)'}">${e.type}</div>
+      <div class="tl-amt ${amtC}">${e.past?'':'+'}${e.amount.toLocaleString('hu-HU',{maximumFractionDigits:0})} Ft</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Transaction table ──
+function renderTxTable(filter){
+  txDirFilter=filter;
+  const data=filter==='mind'?rawTx:rawTx.filter(t=>t.dir===filter);
+  if(!data.length){g('txTable').innerHTML='<div class="empty"><div class="big">📋</div>Nincs ügylet.</div>';return;}
+  const dc={Vétel:'b-buy',Eladás:'b-sell',Osztalék:'b-income',Kamat:'b-income'};
+  const sorted=[...data].sort((a,b)=>b.date-a.date);
+  g('txTable').innerHTML=`
+    <table><thead><tr>
+      <th>Dátum</th><th>Eszköz</th><th>ISIN</th><th>Típus</th><th>Irány</th><th>Régió</th>
+      <th>Mennyiség</th><th>Ár</th><th>Összeg</th><th>Díj</th><th>Megjegyzés</th>
+    </tr></thead><tbody>
+    ${sorted.map(t=>`<tr>
+      <td>${t.dateStr}</td>
+      <td><div class="asset-name">${t.name||t.ticker}</div><div class="asset-sub">${t.ticker}</div></td>
+      <td style="font-size:12px;color:var(--muted)">${t.isin||'—'}</td>
+      <td><span class="badge b-stock" style="font-size:11px">${t.type}</span></td>
+      <td><span class="badge ${dc[t.dir]||'b-buy'}">${t.dir}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${t.region||'—'}</td>
+      <td>${t.qty.toLocaleString('hu-HU',{maximumFractionDigits:4})}${t.isBond?' Ft':''}</td>
+      <td>${t.price.toLocaleString('hu-HU',{maximumFractionDigits:4})}${t.isBond?' (árf.)':''}</td>
+      <td class="${t.dir==='Vétel'?'dn':'up'}">${t.dir==='Vétel'?'−':'+'}${t.total.toLocaleString('hu-HU',{maximumFractionDigits:0})} <span style="font-size:11px;color:var(--muted)">${t.currency}</span></td>
+      <td class="dn">${t.fee>0?'−'+t.fee.toLocaleString('hu-HU',{maximumFractionDigits:0}):'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${t.note||'—'}</td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function filterTx(f,el){
+  document.querySelectorAll('#tab-transactions .ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');renderTxTable(f);
+}
+
+// ── Currency tab ──
+function renderCurrencyTab(){
+  const nf=positions.filter(p=>!p.isForex);
+  const currencies=[...new Set(nf.map(p=>p.currency))];
+  const fmt=v=>{const a=Math.abs(v);if(a>=1e9)return(v/1e9).toFixed(2)+' Mrd';if(a>=1e6)return(v/1e6).toFixed(2)+' M';if(a>=1e3)return(v/1e3).toFixed(1)+' E';return v.toFixed(0);};
+
+  const curData=currencies.map(cur=>{
+    const grp=nf.filter(p=>p.currency===cur);
+    const value=grp.reduce((s,p)=>s+p.value,0);
+    const cost=grp.reduce((s,p)=>s+p.cost,0);
+    const pnl=value-cost, pnlPct=cost>0?pnl/cost*100:0;
+    const rate=fxRates[cur]||1;
+    // XIRR for currency group
+    const cfs=[];
+    rawTx.filter(t=>grp.some(p=>p.ticker===t.ticker)&&t.date).forEach(t=>{
+      const r2=fxRates[t.currency]||1;
+      if(t.dir==='Vétel') cfs.push({d:t.date,a:-(t.total+t.fee)*r2});
+      else if(t.dir==='Eladás') cfs.push({d:t.date,a:(t.total-t.fee)*r2});
+      else cfs.push({d:t.date,a:t.total*r2});
+    });
+    cfs.push({d:new Date(),a:value*rate});
+    cfs.sort((a,b)=>a.d-b.d);
+    const xv=xirr(cfs);
+    return {cur,value,cost,pnl,pnlPct,xirr:xv,xirrPct:xv!=null?xv*100:null,rate,vHUF:value*rate,pHUF:pnl*rate};
+  });
+
+  g('curGrid').innerHTML=`<div class="cur-grid">${curData.map(c=>`
+    <div class="cur-card">
+      <div class="cur-card-hdr">
+        <span class="cur-name">${c.cur}</span>
+        <span style="font-size:11px;color:var(--muted)">1 ${c.cur} = ${c.rate.toLocaleString('hu-HU',{maximumFractionDigits:2})} ${baseCurrency}</span>
+      </div>
+      <div class="cur-body">
+        <div class="cur-row"><span class="cur-row-label">Befektetett</span><span>${fmt(c.cost)} ${c.cur}</span></div>
+        <div class="cur-row"><span class="cur-row-label">Jelenlegi érték</span><span>${fmt(c.value)} ${c.cur}</span></div>
+        <div class="cur-row"><span class="cur-row-label">P&L</span><span class="${c.pnl>=0?'up':'dn'}">${c.pnl>=0?'+':''}${fmt(c.pnl)} · ${c.pnlPct>=0?'+':''}${c.pnlPct.toFixed(2)}%</span></div>
+        <div class="cur-row"><span class="cur-row-label">XIRR/év <span class="xirr-tag">XIRR</span></span><span class="${c.xirrPct!=null?(c.xirrPct>=0?'up':'dn'):'neu'}">${c.xirrPct!=null?(c.xirrPct>=0?'+':'')+c.xirrPct.toFixed(2)+'%':'—'}</span></div>
+        <div class="cur-row"><span class="cur-row-label">HUF értéke</span><span>${fmt(c.vHUF)} ${baseCurrency}</span></div>
+      </div>
+    </div>`).join('')}</div>`;
+
+  const totHUF=curData.reduce((s,c)=>s+c.vHUF,0);
+  const totCostHUF=curData.reduce((s,c)=>s+c.cost*c.rate,0);
+  const totPnlHUF=totHUF-totCostHUF, totPctHUF=totCostHUF>0?totPnlHUF/totCostHUF*100:0;
+  const allCfs=[];
+  nf.forEach(pos=>{
+    rawTx.filter(t=>t.ticker===pos.ticker&&t.date).forEach(t=>{
+      const r2=fxRates[t.currency]||1;
+      if(t.dir==='Vétel') allCfs.push({d:t.date,a:-(t.total+t.fee)*r2});
+      else if(t.dir==='Eladás') allCfs.push({d:t.date,a:(t.total-t.fee)*r2});
+      else allCfs.push({d:t.date,a:t.total*r2});
+    });
+    allCfs.push({d:new Date(),a:pos.value*(fxRates[pos.currency]||1)});
+  });
+  allCfs.sort((a,b)=>a.d-b.d);
+  const gx=xirr(allCfs),gxp=gx!=null?gx*100:null;
+
+  g('hufContent').innerHTML=`<div class="huf-grid">
+    <div><div class="huf-label">Összes érték (${baseCurrency})</div><div class="huf-val">${fmt(totHUF)}</div><div class="huf-sub">${baseCurrency}-ra konvertálva</div></div>
+    <div><div class="huf-label">Befektetett (${baseCurrency})</div><div class="huf-val">${fmt(totCostHUF)}</div><div class="huf-sub">AVCO alapon</div></div>
+    <div><div class="huf-label">P&L (${baseCurrency})</div><div class="huf-val" style="color:${totPnlHUF>=0?'var(--green)':'var(--red)'}">${totPnlHUF>=0?'+':''}${fmt(totPnlHUF)}</div><div class="huf-sub ${totPctHUF>=0?'up':'dn'}">${totPctHUF>=0?'+':''}${totPctHUF.toFixed(2)}% egyszerű</div></div>
+    <div><div class="huf-label">XIRR / év <span class="xirr-tag">XIRR</span></div><div class="huf-val" style="color:${gxp!=null?(gxp>=0?'var(--green)':'var(--red)'):'var(--muted)'}">${gxp!=null?(gxp>=0?'+':'')+gxp.toFixed(2)+'%':'—'}</div><div class="huf-sub">Teljes portfólió</div></div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// DEMO DATA
+// ══════════════════════════════════════════════════════════
+function loadDemo(){
+  baseCurrency='HUF';
+  fxRates={HUF:1,EUR:400,USD:365};
+  updateFxPill();
+  manualPrices={
+    'OTP-SUPRA':2.4521,   // BAMOSZ NAV (Ft/jegy)
+    'ERSTE-BOND':1.1834,  // EUR NAV
+  };
+  const d=(y,m,dd)=>new Date(y,m-1,dd);
+  const ds=(y,m,dd)=>`${y}.${String(m).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;
+
+  rawTx=[
+    // ── Részvények ──
+    {date:d(2022,3,15),dateStr:ds(2022,3,15),isin:'US0378331005',ticker:'AAPL',name:'Apple Inc.',type:'Részvény',dir:'Vétel',qty:10,price:150,fee:5,currency:'USD',region:'USA',total:1500,isBond:false,isForex:false,note:'Első vétel'},
+    {date:d(2024,2,28),dateStr:ds(2024,2,28),isin:'US0378331005',ticker:'AAPL',name:'Apple Inc.',type:'Részvény',dir:'Osztalék',qty:1,price:98,fee:0,currency:'USD',region:'USA',total:98,isBond:false,isForex:false,note:'Negyedéves osztalék'},
+    {date:d(2024,8,10),dateStr:ds(2024,8,10),isin:'US0378331005',ticker:'AAPL',name:'Apple Inc.',type:'Részvény',dir:'Eladás',qty:3,price:195,fee:4,currency:'USD',region:'USA',total:585,isBond:false,isForex:false,note:'Részleges realizálás'},
+    {date:d(2022,6,10),dateStr:ds(2022,6,10),isin:'US88160R1014',ticker:'TSLA',name:'Tesla Inc.',type:'Részvény',dir:'Vétel',qty:8,price:280,fee:4,currency:'USD',region:'USA',total:2240,isBond:false,isForex:false,note:''},
+    {date:d(2023,9,5), dateStr:ds(2023,9,5), isin:'US88160R1014',ticker:'TSLA',name:'Tesla Inc.',type:'Részvény',dir:'Eladás',qty:3,price:250,fee:3,currency:'USD',region:'USA',total:750,isBond:false,isForex:false,note:'Stop-loss'},
+    {date:d(2023,4,5), dateStr:ds(2023,4,5), isin:'HU0000061726',ticker:'OTP', name:'OTP Bank Nyrt.',type:'Részvény',dir:'Vétel',qty:50,price:14200,fee:500,currency:'HUF',region:'Magyarország',total:710000,isBond:false,isForex:false,note:''},
+    {date:d(2023,5,15),dateStr:ds(2023,5,15),isin:'HU0000061726',ticker:'OTP', name:'OTP Bank Nyrt.',type:'Részvény',dir:'Osztalék',qty:1,price:17500,fee:0,currency:'HUF',region:'Magyarország',total:17500,isBond:false,isForex:false,note:'Évi osztalék'},
+    // ── ETF-ek ──
+    {date:d(2022,9,1), dateStr:ds(2022,9,1), isin:'IE00B4L5Y983',ticker:'IWDA',name:'iShares MSCI World ETF',type:'ETF',dir:'Vétel',qty:25,price:72,fee:3,currency:'EUR',region:'Globális',total:1800,isBond:false,isForex:false,note:''},
+    {date:d(2023,8,12),dateStr:ds(2023,8,12),isin:'IE00B5BMR087',ticker:'SXR8',name:'iShares Core S&P 500',type:'ETF',dir:'Vétel',qty:10,price:430,fee:4,currency:'EUR',region:'USA',total:4300,isBond:false,isForex:false,note:''},
+    {date:d(2024,3,20),dateStr:ds(2024,3,20),isin:'IE00B5BMR087',ticker:'SXR8',name:'iShares Core S&P 500',type:'ETF',dir:'Eladás',qty:2,price:495,fee:3,currency:'EUR',region:'USA',total:990,isBond:false,isForex:false,note:'Profit taking'},
+    // ── Befektetési alapok (BAMOSZ) ──
+    {date:d(2021,6,1), dateStr:ds(2021,6,1), isin:'HU0000703590',ticker:'OTP-SUPRA',name:'OTP Supra Alapok Alapja',type:'Alap',dir:'Vétel',qty:10000,price:1.8432,fee:0,currency:'HUF',region:'Magyarország',total:18432,isBond:false,isForex:false,note:''},
+    {date:d(2022,3,10),dateStr:ds(2022,3,10),isin:'HU0000703590',ticker:'OTP-SUPRA',name:'OTP Supra Alapok Alapja',type:'Alap',dir:'Vétel',qty:5000,price:1.9215,fee:0,currency:'HUF',region:'Magyarország',total:9607.5,isBond:false,isForex:false,note:''},
+    {date:d(2023,1,15),dateStr:ds(2023,1,15),isin:'AT0000A1QA38',ticker:'ERSTE-BOND',name:'Erste Bond Opportunities',type:'Alap',dir:'Vétel',qty:8000,price:0.9821,fee:0,currency:'EUR',region:'Európa',total:7856.8,isBond:false,isForex:false,note:'BAMOSZ EUR alap'},
+    // ── FOREX ──
+    {date:d(2024,6,1), dateStr:ds(2024,6,1), isin:'',ticker:'EURHUF',name:'EUR/HUF',type:'FOREX',dir:'Vétel',qty:5000,price:385,fee:0,currency:'HUF',region:'',total:1925000,isBond:false,isForex:true,note:''},
+    // ── Állampapírok ── (qty=névérték Ft, price=árfolyam 100-as skálán)
+    {date:d(2022,11,10),dateStr:ds(2022,11,10),isin:'HU0000403054',ticker:'FIXMAP-27A',name:'FIXMÁP 2027/A',type:'Kötvény',dir:'Vétel',qty:2000000,price:100,fee:0,currency:'HUF',region:'Magyarország',total:2000000,isBond:true,isForex:false,note:'Kincstárnál'},
+    {date:d(2023,11,10),dateStr:ds(2023,11,10),isin:'HU0000403054',ticker:'FIXMAP-27A',name:'FIXMÁP 2027/A',type:'Kötvény',dir:'Kamat',qty:2000000,price:6.5,fee:0,currency:'HUF',region:'Magyarország',total:130000,isBond:true,isForex:false,note:'1. évi kamat'},
+    {date:d(2023,3,15), dateStr:ds(2023,3,15),isin:'HU0000409168',ticker:'PMAP-28',name:'Prémium Magyar Állampapír 2028',type:'Kötvény',dir:'Vétel',qty:3000000,price:100,fee:0,currency:'HUF',region:'Magyarország',total:3000000,isBond:true,isForex:false,note:''},
+    {date:d(2024,3,15), dateStr:ds(2024,3,15),isin:'HU0000409168',ticker:'PMAP-28',name:'Prémium Magyar Állampapír 2028',type:'Kötvény',dir:'Kamat',qty:3000000,price:14.5,fee:0,currency:'HUF',region:'Magyarország',total:435000,isBond:true,isForex:false,note:'Inflációkövető kamat'},
+    {date:d(2022,6,1),  dateStr:ds(2022,6,1), isin:'HU0000409317',ticker:'MAPP-29',name:'MÁP+ 2029',type:'Kötvény',dir:'Vétel',qty:1500000,price:100,fee:0,currency:'HUF',region:'Magyarország',total:1500000,isBond:true,isForex:false,note:''},
+    {date:d(2023,6,1),  dateStr:ds(2023,6,1), isin:'HU0000409317',ticker:'MAPP-29',name:'MÁP+ 2029',type:'Kötvény',dir:'Kamat',qty:1500000,price:4.75,fee:0,currency:'HUF',region:'Magyarország',total:71250,isBond:true,isForex:false,note:'2. évi kamat + prémium'},
+    {date:d(2024,6,1),  dateStr:ds(2024,6,1), isin:'HU0000409317',ticker:'MAPP-29',name:'MÁP+ 2029',type:'Kötvény',dir:'Eladás',qty:500000,price:102.1,fee:0,currency:'HUF',region:'Magyarország',total:510500,isBond:true,isForex:false,note:'Részleges kivét'},
+    {date:d(2020,1,15), dateStr:ds(2020,1,15),isin:'HU0000408848',ticker:'BABA-35',name:'Babakötvény 2035',type:'Kötvény',dir:'Vétel',qty:5000000,price:100,fee:0,currency:'HUF',region:'Magyarország',total:5000000,isBond:true,isForex:false,note:'Gyereknek'},
+    {date:d(2023,12,1), dateStr:ds(2023,12,1),isin:'HU0000410158',ticker:'BMAP-26B',name:'BMÁP 2026/B',type:'Kötvény',dir:'Vétel',qty:1000000,price:100,fee:0,currency:'HUF',region:'Magyarország',total:1000000,isBond:true,isForex:false,note:''},
+  ];
+
+  // Manual prices for bonds (current market price, 100-as scale)
+  manualPrices['FIXMAP-27A']=101.5;
+  manualPrices['PMAP-28']=102.2;
+  manualPrices['MAPP-29']=103.1;
+  manualPrices['BABA-35']=100.0;
+  manualPrices['BMAP-26B']=100.8;
+  // BAMOSZ NAV prices
+  manualPrices['OTP-SUPRA']=2.4521;
+  manualPrices['ERSTE-BOND']=1.1834;
+  // Stock/ETF fallback prices (normally these come from ticker via last transaction)
+  manualPrices['AAPL']=189;
+  manualPrices['TSLA']=195;
+  manualPrices['OTP']=16800;
+  manualPrices['IWDA']=89;
+  manualPrices['SXR8']=510;
+  manualPrices['EURHUF']=400;
+
+  bondParams=[
+    {ticker:'FIXMAP-27A',type:'FIXMÁP',issue:'2022.11.10',maturity:'2027.11.10',couponMonth:12,baseRate:0,inflBase:0,rates:[6.5,6.5,6.5,6.5,6.5]},
+    {ticker:'PMAP-28',   type:'PMÁP',  issue:'2023.03.15',maturity:'2028.03.15',couponMonth:12,baseRate:0,inflBase:15,rates:[1.5,1.5,1.5,1.5,1.5]},
+    {ticker:'MAPP-29',   type:'MÁP+',  issue:'2022.06.01',maturity:'2029.06.01',couponMonth:12,baseRate:4.25,inflBase:0,rates:[0.5,0.75,1.0,1.25,1.5,1.75,2.0]},
+    {ticker:'BABA-35',   type:'Babakötvény',issue:'2020.01.15',maturity:'2035.01.15',couponMonth:12,baseRate:0,inflBase:0,rates:[10,10,10,10,10,10,10,10,10,10,10,10,10,10,10]},
+    {ticker:'BMAP-26B',  type:'BMÁP',  issue:'2023.12.01',maturity:'2026.12.01',couponMonth:12,baseRate:6.5,inflBase:0,rates:[1.0]},
+  ];
+
+  positions=derivePositions(rawTx);
+  renderAll();
+  g('configPanel').classList.remove('open');
+  g('lastUpdate').textContent='Demo adatok';
+  showNotif('Demo adatok betöltve ✓ — AVCO pozíciók kiszámítva az ügyletekből','success');
+}
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+function updateFxPill(){
+  const parts=['EUR','USD','GBP'].filter(c=>fxRates[c]).map(c=>`${c} <span class="val">${fxRates[c].toFixed(0)}</span>`);
+  if(parts.length){g('fxPill').innerHTML=parts.join(' · ')+` ${baseCurrency}`;g('fxPill').style.display='';}
+}
+function cfg(k,def=''){return localStorage.getItem(k)||def;}
+function toggleConfig(){
+  g('configPanel').classList.toggle('open');
+  ['txCsvUrl','bondCsvUrl','priceCsvUrl','baseCurrency'].forEach(k=>{const el=g(k);if(el)el.value=cfg(k)||el.value||'';});
+}
+function saveConfig(){
+  ['txCsvUrl','bondCsvUrl','priceCsvUrl','baseCurrency'].forEach(k=>{const el=g(k);if(el)localStorage.setItem(k,el.value.trim());});
+  g('configPanel').classList.remove('open');
+  loadAll();
+}
+function switchTab(name,el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');g('tab-'+name).classList.add('active');
+}
+function g(x){return document.getElementById(x);}
+function set(x,html){const el=g(x);if(el)el.innerHTML=html;}
+function destroyChart(c){} // no-op, using SVG charts now
+function showLoading(){
+  ['posTable','txTable','bondCardsContainer','hufContent','curGrid'].forEach(x=>{
+    const el=g(x);if(el)el.innerHTML='<div class="loading"><div class="spinner"></div>Betöltés...</div>';
+  });
+}
+function showNotif(msg,type='success'){
+  const n=g('notif');n.textContent=msg;n.className='notif '+type+' show';
+  setTimeout(()=>n.classList.remove('show'),5000);
+}
+
+// Auto-load
+if(cfg('txCsvUrl')) loadAll();
+</script>
+</body>
+</html>
